@@ -3,14 +3,15 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;700&family=Lora:wght@400;500&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="style.css">
   <title>Navegar Produtos</title>
 </head>
 <body>
   <header>
     <h1>
-      <a href="inicio.html"><img src="logo.png" alt="logotipo"></a>
+		<a href="inicio.html">
+			<img src="logo.png" alt="logotipo">
+		</a>
     </h1>
 
     <nav>
@@ -165,10 +166,10 @@
       window.location.href = "compra.html";
     }
 
-    /* carregar ao abrir página */
+    // Carregar ao abrir página
     renderCart();
 
-    /* sistema de pesquisa */
+    // Pesquisa que não diferencia maiúsculas de minúsculas
     const campoPesquisa = document.getElementById("campo-pesquisa");
     const listaProdutos = document.querySelector(".produtos");
     const resultadoPesquisa = document.getElementById("resultado-pesquisa");

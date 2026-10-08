@@ -17,10 +17,10 @@ mysqli_query($conexao, "DROP TABLE IF EXISTS $tbNome1");
 // Cria tbl_compras
 $sqlCompras = "CREATE TABLE $tbNome1 (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(150) NOT NULL,
-    email VARCHAR(150) NOT NULL,
-    telefone VARCHAR(30) NOT NULL,
-    endereco TEXT NOT NULL,
+    nome VARCHAR(200) NOT NULL,
+    email VARCHAR(150) NOT NULL UNIQUE,
+    telefone VARCHAR(30) NOT NULL UNIQUE,
+    endereco VARCHAR(500) NOT NULL,
     itens JSON NOT NULL,
     total DECIMAL(10,2) NOT NULL,
     data_compra DATETIME DEFAULT CURRENT_TIMESTAMP
@@ -37,15 +37,11 @@ if (mysqli_query($conexao, $sqlCompras)) {
 $sqlItens = "CREATE TABLE $tbNome2 (
     id INT AUTO_INCREMENT PRIMARY KEY,
     compra_id INT NOT NULL,
-    produto VARCHAR(150) NOT NULL,
+    produto VARCHAR(200) NOT NULL,
     preco DECIMAL(10,2) NOT NULL,
     quantidade INT NOT NULL,
     subtotal DECIMAL(10,2) NOT NULL,
-    CONSTRAINT fk_itens_compra
-        FOREIGN KEY (compra_id)
-        REFERENCES $tbNome1(id)
-        ON DELETE CASCADE
-        ON UPDATE CASCADE
+    CONSTRAINT fk_itens_compra FOREIGN KEY(compra_id) REFERENCES $tbNome1(id) ON DELETE CASCADE ON UPDATE CASCADE
 )";
 
 if (mysqli_query($conexao, $sqlItens)) {

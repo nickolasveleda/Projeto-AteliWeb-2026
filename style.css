@@ -1,3 +1,35 @@
+@font-face {
+    font-family: 'Lora';
+    src: url('Lora-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Lora';
+    src: url('Lora-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Playfair Display';
+    src: url('PlayfairDisplay-Regular.woff2') format('woff2');
+    font-weight: 400;
+    font-style: normal;
+    font-display: swap;
+}
+
+@font-face {
+    font-family: 'Playfair Display';
+    src: url('PlayfairDisplay-Bold.woff2') format('woff2');
+    font-weight: 700;
+    font-style: normal;
+    font-display: swap;
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -10,13 +42,18 @@ html, body {
 
 body {
     background-color: #f7f5f2;
-    background-image: url('https://www.transparenttextures.com/patterns/paper-fibers.png');
+    background-image: url('paper-fibers.png');
     background-size: 300px;
+
     color: #2e2e2e;
+
     font-family: 'Lora', serif;
+
     display: flex;
     flex-direction: column;
+
     min-height: 100vh;
+    line-height: 1.5;
 }
 
 h1, h2, h3 {
@@ -174,6 +211,7 @@ label {
 
 input, textarea {
     width: 100%;
+
     padding: 10px;
 
     border-radius: 6px;
@@ -184,8 +222,7 @@ input, textarea {
     font-family: 'Lora', serif;
 }
 
-input:focus,
-textarea:focus {
+input:focus, textarea:focus {
     border-color: #c65d3b;
 }
 
@@ -194,9 +231,11 @@ textarea:focus {
 
 .contato-box {
     max-width: 600px;
+
     margin: auto;
 
     background: white;
+
     padding: 25px;
 
     border-radius: 12px;
@@ -211,6 +250,7 @@ textarea:focus {
 
 .contato-box > p {
     margin-bottom: 20px;
+
     color: #5a5a5a;
 }
 
@@ -221,11 +261,13 @@ textarea {
 
 .email-link {
     color: #a5511f;
+
     text-decoration: none;
 }
 
 .email-link:hover {
     color: #8a5a44;
+
     text-decoration: underline;
 }
 
@@ -234,11 +276,13 @@ textarea {
 
 .sobre-section {
     max-width: 900px;
+
     margin: auto;
     padding: 50px 25px;
 
     text-align: center;
-    line-height: 1.6;
+    line-height: 1.75;
+
     color: #444;
 }
 
@@ -255,7 +299,9 @@ textarea {
 
 .pesquisa {
     max-width: 600px;
+
     margin: 25px auto 10px;
+
     padding: 0 20px;
 }
 
@@ -267,10 +313,12 @@ textarea {
     border-radius: 8px;
 
     background: white;
+
     color: #2e2e2e;
 
     font-family: 'Lora', serif;
     font-size: 1em;
+
     outline: none;
 }
 
@@ -281,8 +329,11 @@ textarea {
 
 #resultado-pesquisa {
     text-align: center;
+
     color: #777;
+
     font-size: 0.9em;
+
     margin: 10px 0 20px;
 }
 
@@ -299,6 +350,7 @@ textarea {
     visibility: hidden;
 
     transition: opacity 0.3s ease;
+
     z-index: 10;
 }
 
@@ -312,8 +364,8 @@ textarea {
     right: -320px;
     top: 0;
 
-    width: 300px;
-    height: 100%;
+    width: min(300px, 90vw);
+    height: 100vh;
 
     background: white;
 
@@ -322,10 +374,15 @@ textarea {
     transition: right 0.3s ease;
 
     text-align: center;
+
     padding: 20px;
 }
 
 .cart.toggle {
+    right: 0;
+}
+
+.cart.active {
     right: 0;
 }
 
@@ -335,7 +392,9 @@ textarea {
 
 #cart-items {
     list-style: none;
+
     padding: 0;
+
     margin-bottom: 20px;
 }
 
@@ -360,6 +419,7 @@ textarea {
 .item-img {
     width: 50px;
     height: 50px;
+
     object-fit: cover;
 }
 
@@ -369,38 +429,49 @@ textarea {
 
 .item-name {
     display: block;
+
     text-align: left;
 }
 
 .item-price {
     color: #777;
+
     font-size: 0.85em;
 }
 
 .item-controls {
     display: flex;
+
     align-items: center;
+
     gap: 6px;
 }
 
 .item-controls button {
     background: #e6ded3;
     border: none;
+
     padding: 4px 8px;
+
     cursor: pointer;
+
     border-radius: 4px;
 }
 
 .item-subtotal {
     font-weight: 500;
+
     color: #a5511f;
 }
 
 .remove-btn {
     background: none;
     border: none;
+
     color: #c65d3b;
+
     cursor: pointer;
+
     font-size: 16px;
 }
 
@@ -430,24 +501,28 @@ textarea {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
 }
 
+/* Checkout */
+
 #checkout-btn {
     display: none;
 }
 
-/* Checkout */
-
 .checkout-container {
     max-width: 900px;
+
     margin: 40px auto;
+
     padding: 20px;
 }
 
 .checkout-form {
     display: flex;
     flex-direction: column;
+
     gap: 20px;
 
     background: white;
+
     padding: 25px;
 
     border-radius: 12px;
@@ -457,6 +532,7 @@ textarea {
 .form-fields {
     display: flex;
     flex-direction: column;
+
     gap: 15px;
 }
 
@@ -468,31 +544,36 @@ textarea {
 
 .cart-item {
     display: flex;
+
     justify-content: space-between;
+
     align-items: center;
+
     margin-bottom: 8px;
 }
 
 #total {
     text-align: right;
     font-weight: 600;
+
     color: #a5511f;
+
     font-size: 1.1em;
+
     margin-top: 10px;
 }
 
-/* rodapé / copyright */
+/* Copyright */
 
 .copyright {
-    position: fixed;
-    top: 12px;
-    left: 15px;
+    text-align: center;
 
     color: #8a8178;
-    font-size: 0.75em;
 
+    font-size: 0.75em;
     letter-spacing: 0.5px;
+
     opacity: 0.7;
 
-    z-index: 999;
+    padding: 15px;
 }

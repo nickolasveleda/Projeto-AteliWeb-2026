@@ -11,14 +11,14 @@ $tbNome1 = "tbl_produto";
 $elimina = "DROP TABLE IF EXISTS tbl_produto";
 
 $criacao1 = "CREATE TABLE IF NOT EXISTS $tbNome1 ("
-      ."pro_id INT(10) NOT NULL AUTO_INCREMENT,"
+      ."pro_id INT NOT NULL AUTO_INCREMENT,"
       ."pro_nome VARCHAR(200) NOT NULL,"
       ."pro_descricao TEXT,"
       ."pro_preco DECIMAL(10,2) NOT NULL,"
       ."pro_categoria VARCHAR(100) NOT NULL,"
       ."pro_imagem VARCHAR(300) NOT NULL,"
       ."pro_estoque INT NOT NULL DEFAULT 0,"
-      ."PRIMARY KEY (pro_id))";
+      ."PRIMARY KEY(pro_id))";
 
 // Executa o DROP
 $resDrop = mysqli_query($conexao, $elimina);
@@ -39,16 +39,13 @@ if ($resCria1 > 0) {
 }
 
 
-// ==========================================
-// CADASTRO DOS PRODUTOS
-// ==========================================
-
+// Cadastro dos produtos
 $inserirProdutos = "INSERT INTO tbl_produto(pro_nome, pro_descricao, pro_preco, pro_categoria, pro_imagem, pro_estoque) VALUES('Vaso rústico', 'Vaso artesanal de cerâmica.', 89.90, 'Vasos', 'vaso_rustico.jpg', 10), ('Caneca artesanal', 'Caneca artesanal de cerâmica.', 49.90, 'Canecas', 'caneca_artesanal.jpg', 10), ('Prato decorativo', 'Prato decorativo de cerâmica.', 69.90, 'Pratos', 'prato_decorativo.jpg', 10), ('Conjunto de tigelas', 'Conjunto de tigelas artesanais.', 119.90, 'Tigelas', 'conjunto_tigelas.jpg', 10), ('Escultura artesanal', 'Escultura artesanal de cerâmica.', 149.90, 'Esculturas', 'escultura_artesanal.jpg', 10)";
 
 $resProdutos = mysqli_query($conexao, $inserirProdutos);
 
 if ($resProdutos) {
-    echo "Produtos cadastrados com sucesso!<br>";
+    echo "Produtos cadastrados com sucesso<br>";
 } else {
     echo "Erro ao cadastrar produtos: " . mysqli_error($conexao) . "<br>";
 }
