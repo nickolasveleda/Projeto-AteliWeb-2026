@@ -37,20 +37,26 @@
       return saved
         .filter(item =>
           item &&
+          Number.isSafeInteger(item.id) &&
+          item.id > 0 &&
           typeof item.name === "string" &&
-          isValidPrice(item.price) &&
-          Number.isInteger(Number(item.quantity)) &&
-          Number(item.quantity) > 0 &&
+          item.name.trim() !== "" &&
+          typeof item.price === "number" &&
+          Number.isFinite(item.price) &&
+          item.price >= 0 &&
+          Number.isSafeInteger(item.quantity) &&
+          item.quantity > 0 &&
           typeof item.image === "string"
         )
         .map(item => ({
+          id: item.id,
           name: item.name,
-          price: Number(item.price),
+          price: item.price,
           image: item.image,
-          quantity: Number(item.quantity)
+          quantity: item.quantity
         }));
     } catch (error) {
-      console.error("Erro ao carregar o carrinho:", error);
+      console.error("Erro ao carregar o carrinho: ", error);
       return [];
     }
   }
@@ -66,8 +72,8 @@
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(cart));
     } catch (error) {
-      console.error("Erro ao salvar o carrinho:", error);
-      alert("Não foi possível salvar o carrinho neste navegador.");
+      console.error("Erro ao salvar o carrinho: ", error);
+      alert("Não foi possível salvar o carrinho neste navegador");
     }
   }
 
@@ -106,32 +112,35 @@
 
   // Adiciona um produto ao carrinho
   function addToCart(id, name, price, image) {
-    const productId = Number(id);
-
     if (
-      !Number.isSafeInteger(productId) ||
-      productId <= 0 ||
+      !Number.isSafeInteger(id) ||
+      id <= 0 ||
       typeof name !== "string" ||
       !name.trim() ||
-      !isValidPrice(price) ||
+      typeof price !== "number" ||
+      !Number.isFinite(price) ||
+      price < 0 ||
       typeof image !== "string"
     ) {
-      console.error("Produto inválido");
+      console.error("Produto inválido", { id, name, price, image });
+      alert("Não foi possível adicionar este produto ao carrinho");
       return;
     }
 
-    const parsedPrice = Number(price);
-    const existing = cart.find(
-      item => item.id === productId
-    );
+    const existing = cart.find(item => item.id === id);
 
     if (existing) {
+      if (existing.quantity >= Number.MAX_SAFE_INTEGER) {
+        alert("Limite de quantidade atingido");
+        return;
+      }
+
       existing.quantity++;
     } else {
       cart.push({
-        id: productId,
+        id,
         name,
-        price: parsedPrice,
+        price,
         image,
         quantity: 1
       });
@@ -226,7 +235,7 @@
 
       li.appendChild(image);
 
-      // Nome e preço unitário
+      // Nome do produto
       const info = document.createElement("div");
       info.className = "item-info";
 
@@ -234,11 +243,7 @@
       name.className = "item-name";
       name.textContent = item.name;
 
-      const price = document.createElement("span");
-      price.className = "item-price";
-      price.textContent = formatPrice(item.price);
-
-      info.append(name, price);
+      info.appendChild(name);
       li.appendChild(info);
 
       // Controles de quantidade

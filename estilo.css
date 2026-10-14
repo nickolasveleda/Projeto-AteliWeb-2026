@@ -115,12 +115,7 @@ nav a:hover {
 /* Hero */
 
 .hero {
-    background:
-        linear-gradient(
-            rgba(0, 0, 0, 0.3),
-            rgba(0, 0, 0, 0.3)
-        ),
-        url('background.jpg') center/cover no-repeat;
+    background: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.3)), url('background.jpg') center/cover no-repeat;
 
     height: 50vh;
 
@@ -420,9 +415,12 @@ textarea {
 }
 
 #cart-items li {
+    display: grid;
     grid-template-columns: 40px minmax(0, 1fr) auto;
 
-    gap: 8px;
+    gap: 5px;
+
+    align-items: center;
 
     padding: 10px;
 }
@@ -444,7 +442,12 @@ textarea {
 }
 
 .item-controls {
-    gap: 4px;
+    display: flex;
+    align-items: center;
+
+    justify-content: center;
+
+    gap: 10px;
 }
 
 .item-controls button {
@@ -452,11 +455,17 @@ textarea {
 
     border: none;
 
-    padding: 4px 8px;
+    padding: 5px 10px;
 
     cursor: pointer;
 
-    border-radius: 4px;
+    border-radius: 5px;
+}
+
+.item-controls span {
+    min-width: 20px;
+
+    text-align: center;
 }
 
 .item-subtotal {

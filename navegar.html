@@ -74,39 +74,57 @@
             resultadoPesquisa.textContent = `${produtos.length} produto(s) encontrado(s)`;
 
             produtos.forEach(produto => {
-              const card = document.createElement("div");
+              const id = Number(produto.pro_id);
+              const nome = produto.pro_nome;
+              const preco = Number(produto.pro_preco);
+              const imagem = produto.pro_imagem;
 
+              if (
+                !Number.isSafeInteger(id) ||
+                id <= 0 ||
+                typeof nome !== "string" ||
+                typeof imagem !== "string" ||
+                !Number.isFinite(preco) ||
+                preco < 0
+              ) {
+                console.error("Produto inválido recebido do servidor: ", produto);
+                return;
+              }
+
+              const card = document.createElement("div");
               card.className = "produto";
 
-              card.innerHTML = `
-                <img
-                  src="${produto.pro_imagem}"
-                  alt="${produto.pro_nome}"
-                >
+              const img = document.createElement("img");
+              img.src = imagem;
+              img.alt = nome;
+              img.loading = "lazy";
 
-                <h3>${produto.pro_nome}</h3>
+              const titulo = document.createElement("h3");
+              titulo.textContent = nome;
 
-                <p>
-                  ${Number(produto.pro_preco).toLocaleString("pt-BR", {
-                    style: "currency",
-                    currency: "BRL"
-                  })}
-                </p>
-
-                <button class="btn">
-                  Comprar
-                </button>
-              `;
-
-              const botao = card.querySelector(".btn");
-
-              botao.addEventListener("click", () => {
-                addToCart(produto.pro_nome, Number(produto.pro_preco), produto.pro_imagem);
+              const precoElement = document.createElement("p");
+              precoElement.textContent = preco.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL"
               });
 
+              const botao = document.createElement("button");
+              botao.type = "button";
+              botao.className = "btn";
+              botao.textContent = "Comprar";
+
+              botao.addEventListener("click", () => {
+                addToCart(
+                  Number(produto.pro_id),
+                  produto.pro_nome,
+                  Number(produto.pro_preco),
+                  produto.pro_imagem
+                );
+              });
+
+              card.append(img, titulo, precoElement, botao);
               listaProdutos.appendChild(card);
             });
-
         } catch (erro) {
             if (erro.name === "AbortError") return;
 
@@ -114,6 +132,14 @@
             resultadoPesquisa.textContent = "Não foi possível carregar os produtos";
         }
     }
+
+    const listaProdutos = document.querySelector(".produtos");
+    const resultadoPesquisa = document.getElementById("resultado-pesquisa");
+    const campoPesquisa = document.getElementById("campo-pesquisa");
+
+    campoPesquisa.addEventListener("input", () => {
+      buscarProdutos(campoPesquisa.value.trim());
+    });
 
     buscarProdutos();
   </script>
