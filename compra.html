@@ -33,102 +33,181 @@
 			<button type="submit" class="btn">Enviar pedido</button>
 		</form>
 	</div>
-	<script>
-	    let cart = JSON.parse(localStorage.getItem("cart")) || [];
+  <script>
+    "use strict";
 
-	    function formatPrice(price){
-	        return price.toFixed(2).replace(".", ",");
-	    }
+    const STORAGE_KEY = "cart";
+    let cart = loadCart();
 
-	    function renderCart(){
-	        const cartItemsDiv = document.getElementById("cart-items");
-	        const totalDiv = document.getElementById("total");
+    function isValidPrice(price) {
+      if (typeof price !== "number" && typeof price !== "string") {
+        return false;
+      }
 
-	        cartItemsDiv.innerHTML = "";
+      if (typeof price === "string") {
+        price = price.trim();
 
-	        let total = 0;
+        if (!/^\d+(\.\d+)?$/.test(price)) {
+          return false;
+        }
+      }
 
-	        cart.forEach(item => {
-	            const subtotal = item.price * item.quantity;
+      const parsedPrice = Number(price);
 
-	            total += subtotal;
+      return (
+        Number.isFinite(parsedPrice) &&
+        parsedPrice >= 0
+      );
+    }
+    
+    function loadCart() {
+      try {
+        const saved = JSON.parse(
+          localStorage.getItem(STORAGE_KEY)
+        );
 
-	            const div = document.createElement("div");
+        if (!Array.isArray(saved)) return [];
 
-	            div.classList.add("cart-item");
+        return saved
+          .filter(item =>
+            item &&
+            typeof item.name === "string" &&
+            isValidPrice(item.price) &&
+            Number.isSafeInteger(Number(item.quantity)) &&
+            Number(item.quantity) > 0
+          )
+          .map(item => ({
+            name: item.name,
+            price: Number(item.price),
+            quantity: Number(item.quantity),
+            image: typeof item.image === "string" ? item.image : ""
+          }));
+      } catch (error) {
+        console.error("Erro ao carregar o carrinho: ", error);
 
-	            div.innerHTML = `
-	                <span>${item.name} (${item.quantity}×)</span>
-	                <span>R$ ${formatPrice(subtotal)}</span>
-	            `;
+        return [];
+      }
+    }
 
-	            cartItemsDiv.appendChild(div);
-	        });
+    function formatPrice(price) {
+      return Number(price).toLocaleString("pt-BR", {
+        style: "currency",
+        currency: "BRL"
+      });
+    }
 
-	        totalDiv.innerText = "Total: R$ " + formatPrice(total);
-	    }
+    function renderCart() {
+      const cartItemsDiv = document.getElementById("cart-items");
+      const totalDiv = document.getElementById("total");
+      cartItemsDiv.replaceChildren();
 
-	    renderCart();
+      let total = 0;
 
-	    document.getElementById("checkout-form").addEventListener("submit", async function(e){
-	        e.preventDefault();
+      cart.forEach(item => {
+        const subtotal = item.price * item.quantity;
+        total += subtotal;
 
-	        if(cart.length === 0){
-	            alert("Seu carrinho está vazio");
-	            return;
-	        }
+        const row = document.createElement("div");
+        row.className = "cart-item";
 
-	        // Calcula o total novamente
-	        let total = 0;
+        const description = document.createElement("span");
+        description.textContent = `${item.name} (${item.quantity}×)`;
 
-	        cart.forEach(item => {
-	            total += item.price * item.quantity;
-	        });
+        const price = document.createElement("span");
+        price.textContent = formatPrice(subtotal);
 
-	        const dados = new FormData();
+        row.append(description, price);
+        cartItemsDiv.appendChild(row);
+      });
 
-	        const formulario = e.currentTarget;
+      totalDiv.textContent = `Total: ${formatPrice(total)}`;
+    }
 
-			dados.append("name", formulario.elements.namedItem("name").value);
+    renderCart();
 
-			dados.append("email", formulario.elements.namedItem("email").value);
+    const checkoutForm = document.getElementById("checkout-form");
 
-			dados.append("phone", formulario.elements.namedItem("phone").value);
+    if (!checkoutForm) {
+      console.error("Formulário de compra não encontrado.");
+    } else {
+      checkoutForm.addEventListener(
+        "submit",
+        async function (event) {
+          event.preventDefault();
 
-			dados.append("address", formulario.elements.namedItem("address").value);
+          if (cart.length === 0) {
+            alert("Seu carrinho está vazio");
+            return;
+          }
 
-	        // Envia o carrinho inteiro em JSON
-	        dados.append("cart", JSON.stringify(cart));
+          const cartIsValid = cart.every(item =>
+            item &&
+            typeof item.name === "string" &&
+            item.name.trim() !== "" &&
+            isValidPrice(item.price) &&
+            Number.isSafeInteger(item.quantity) &&
+            item.quantity > 0
+          );
 
-	        // Envia o valor total
-	        dados.append("total", total);
+          if (!cartIsValid) {
+            alert("O carrinho contém produtos inválidos");
+            return;
+          }
 
+          const form = event.currentTarget;
+          const submitButton = form.querySelector('button[type="submit"]');
+          if (submitButton.disabled) return;
 
-	        try {
-	            const resposta = await fetch("salvar_compra.php", {
-	                method: "POST",
-	                body: dados
-	            });
+          const total = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+          const dados = new FormData();
 
-	            const resultado = await resposta.json();
+          dados.append("name", form.elements.namedItem("name").value.trim());
+          dados.append("email", form.elements.namedItem("email").value.trim());
+          dados.append("phone", form.elements.namedItem("phone").value.trim());
+          dados.append("address", form.elements.namedItem("address").value.trim());
 
-	            if(resultado.sucesso){
-	                alert(resultado.mensagem);
+          // O PHP deve recalcular o total usando os preços oficiais do banco de dados
+          dados.append("cart", JSON.stringify(cart));
+          dados.append("total", total.toFixed(2));
 
-	                // Limpa o carrinho somente depois de salvar no banco
-	                localStorage.removeItem("cart");
+          submitButton.disabled = true;
+          const originalText = submitButton.textContent;
+          submitButton.textContent = "Enviando pedido...";
 
-	                window.location.href = "inicio.html";
-	            } else {
-	                alert("Erro: " + resultado.mensagem);
+          try {
+            const resposta = await fetch("salvar_compra.php", {
+              method: "POST",
+              body: dados
+            });
 
-	            }
-	        } catch(erro) {
-	            console.error("Erro: ", erro);
+            let resultado;
+            try {
+              resultado = await resposta.json();
+            } catch {
+              throw new Error("O servidor retornou uma resposta inválida");
+            }
 
-	            alert("Verifique sua conexão e tente novamente" + "\nNão foi possível enviar o pedido");
-	        }
-	    });
-	</script>
+            if (!resposta.ok) {
+              throw new Error(resultado?.mensagem || "Não foi possível salvar o pedido");
+            }
+
+            if (resultado && resultado.sucesso) {
+              alert(resultado.mensagem || "Pedido enviado com sucesso.");
+              localStorage.removeItem(STORAGE_KEY);
+              window.location.href = "inicio.html";
+            } else {
+              alert("Erro: " + (resultado?.mensagem || "Não foi possível enviar o pedido"));
+            }
+          } catch (error) {
+            console.error("Erro ao enviar pedido: ", error);
+            alert(error.message || "Verifique sua conexão. Não foi possível enviar o pedido");
+          } finally {
+            submitButton.disabled = false;
+            submitButton.textContent = originalText;
+          }
+        }
+      );
+    }
+  </script>
 </body>
 </html>
