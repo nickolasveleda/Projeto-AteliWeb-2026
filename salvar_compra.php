@@ -1,136 +1,300 @@
 <?php
 
+declare(strict_types = 1);
+
 header('Content-Type: application/json; charset=utf-8');
 
-require_once("conecta.php");
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-try {
-    // 1. Verifica o método
-    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        throw new Exception('Método de requisição inválido');
+require_once __DIR__ . '/conecta.php';
+
+$transacaoIniciada = false;
+
+// Retorna uma resposta JSON e encerra o processamento
+function responder(int $status, array $dados): never {
+    http_response_code($status);
+
+    echo json_encode(
+        $dados,
+        JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
+    );
+
+    exit;
+}
+
+// Valida um inteiro positivo recebido como número ou string decimal
+function inteiroPositivo(mixed $valor): ?int {
+    if (is_int($valor)) {
+        return $valor > 0 ? $valor : null;
     }
 
-    // 2. Recebe os dados do cliente
+    if (
+        !is_string($valor) ||
+        !preg_match('/^[1-9][0-9]*$/', $valor)
+    ) {
+        return null;
+    }
+
+    $numero = filter_var(
+        $valor,
+        FILTER_VALIDATE_INT,
+        ['options' => ['min_range' => 1]]
+    );
+
+    return $numero === false ? null : $numero;
+}
+
+// Converte um preço decimal com duas casas para centavos, aceitando somente a representação decimal convencional
+function precoEmCentavos(mixed $valor): int {
+    if (!is_string($valor) && !is_int($valor)) {
+        throw new RuntimeException('Preço inválido no banco');
+    }
+
+    $valor = (string) $valor;
+
+    if (!preg_match('/^([0-9]+)\.([0-9]{2})$/', $valor, $partes)) {
+        throw new RuntimeException('Preço inválido no banco');
+    }
+
+    $inteiro = (int) $partes[1];
+
+    if (
+        (string) $inteiro !== ltrim($partes[1], '0') &&
+        !preg_match('/^0+$/', $partes[1])
+    ) {
+        throw new RuntimeException('Preço fora do limite permitido');
+    }
+
+    if ($inteiro > 10000000) {
+        throw new RuntimeException('Preço fora do limite permitido');
+    }
+
+    return ($inteiro * 100) + (int) $partes[2];
+}
+
+// Formata centavos como decimal com duas casas
+function formatarDinheiro(int $centavos): string {
+    return intdiv($centavos, 100) . '.' . str_pad((string) ($centavos % 100), 2, '0', STR_PAD_LEFT);
+}
+
+try {
+    // 1. Aceita somente POST
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        responder(405, ['sucesso' => false, 'mensagem' => 'Método de requisição inválido']);
+    }
+
+    mysqli_set_charset($conexao, 'utf8mb4');
+
+    // 2. Recebe e valida os dados do cliente
     $nome = trim($_POST['name'] ?? '');
     $email = trim($_POST['email'] ?? '');
     $telefone = trim($_POST['phone'] ?? '');
     $endereco = trim($_POST['address'] ?? '');
+    $jsonCarrinho = $_POST['cart'] ?? '';
 
-    // Recebe o carrinho em JSON
-    $itens = $_POST['cart'] ?? '';
+    if (!is_string($nome) || !is_string($email) || !is_string($telefone) || !is_string($endereco) || !is_string($jsonCarrinho)) {
+        responder(400, ['sucesso' => false, 'mensagem' => 'Dados enviados em formato inválido']);
+    }
 
-    // 3. Validação dos dados
     if ($nome === '' || $email === '' || $telefone === '' || $endereco === '') {
-        throw new Exception('Preencha todos os campos obrigatórios');
+        responder(400, ['sucesso' => false, 'mensagem' => 'Preencha todos os campos obrigatórios']);
     }
 
-    if ($itens === '') {
-        throw new Exception('O carrinho está vazio');
+    if (mb_strlen($nome) > 200 || mb_strlen($email) > 150 || mb_strlen($telefone) > 30 || mb_strlen($endereco) > 500) {
+        responder(400, ['sucesso' => false, 'mensagem' => 'Um ou mais campos excedem o tamanho permitido']);
     }
 
-    // 4. Converte o JSON do carrinho para array PHP
-    $cartArray = json_decode($itens, true);
-
-    if (!is_array($cartArray) || count($cartArray) === 0) {
-        throw new Exception('Carrinho inválido');
+    if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+        responder(400, ['sucesso' => false, 'mensagem' => 'Informe um e-mail válido']);
     }
 
-    // Verifica se o JSON recebido realmente é válido
-    if (json_last_error() !== JSON_ERROR_NONE) {
-        throw new Exception('JSON do carrinho inválido: ' . json_last_error_msg());
+    if ($jsonCarrinho === '' || strlen($jsonCarrinho) > 100000) {
+        responder(400, ['sucesso' => false, 'mensagem' => 'Carrinho vazio ou muito grande']);
     }
+
+    // 3. Decodifica o JSON
+    $itensRecebidos = json_decode($jsonCarrinho, true, 32, JSON_THROW_ON_ERROR);
+
+    if (!is_array($itensRecebidos) || !array_is_list($itensRecebidos) || count($itensRecebidos) === 0 || count($itensRecebidos) > 100) {
+        responder(400, ['sucesso' => false, 'mensagem' => 'Carrinho inválido']);
+    }
+
+    // 4. Valida os IDs e as quantidades e agrupa produtos repetidos
+    $quantidades = [];
+
+    foreach ($itensRecebidos as $item) {
+        if (!is_array($item)) {
+            throw new InvalidArgumentException('Item inválido no carrinho');
+        }
+
+        $id = inteiroPositivo($item['id'] ?? null);
+        $quantidade = inteiroPositivo($item['quantity'] ?? null);
+
+        if ($id === null || $quantidade === null) {
+            throw new InvalidArgumentException('Produto ou quantidade inválidos');
+        }
+
+        if ($quantidade > 10000) {
+            throw new InvalidArgumentException('Quantidade acima do limite permitido');
+        }
+
+        $anterior = $quantidades[$id] ?? 0;
+
+        if ($anterior > 10000 - $quantidade) {
+            throw new InvalidArgumentException('Quantidade acima do limite permitido');
+        }
+
+        $quantidades[$id] = $anterior + $quantidade;
+    }
+
+    // Ordena os IDs para reduzir o risco de deadlocks
+    ksort($quantidades, SORT_NUMERIC);
 
     // 5. Inicia a transação
     mysqli_begin_transaction($conexao);
+    $transacaoIniciada = true;
 
-    // 6. Calcula o total no servidor
-    $total = 0;
+    $produtos = [];
+    $totalCentavos = 0;
 
-    foreach ($cartArray as $item) {
-        $preco = floatval($item['price'] ?? 0);
-        $quantidade = intval($item['quantity'] ?? 0);
+    // 6. Busca cada produto no banco e bloqueia sua linha
+    $sqlProduto = 'SELECT pro_id, pro_nome, pro_preco, pro_estoque, pro_imagem FROM tbl_produto WHERE pro_id = ? FOR UPDATE';
 
-        if ($preco < 0 || $quantidade <= 0) {
-            throw new Exception('Item inválido no carrinho');
+    $stmtProduto = mysqli_prepare($conexao, $sqlProduto);
+
+    foreach ($quantidades as $id => $quantidade) {
+        mysqli_stmt_bind_param($stmtProduto, 'i', $id);
+        mysqli_stmt_execute($stmtProduto);
+
+        mysqli_stmt_bind_result($stmtProduto, $produtoId, $produtoNome, $produtoPreco, $estoqueDisponivel, $produtoImagem);
+
+        $encontrado = mysqli_stmt_fetch($stmtProduto);
+
+        mysqli_stmt_free_result($stmtProduto);
+
+        if (!$encontrado) {
+            throw new InvalidArgumentException('Um dos produtos não existe mais');
         }
 
-        $subtotal = $preco * $quantidade;
+        $estoqueDisponivel = (int) $estoqueDisponivel;
 
-        $total += $subtotal;
+        if ($estoqueDisponivel < $quantidade) {
+            throw new InvalidArgumentException('Estoque insuficiente para o produto ' . $produtoNome);
+        }
+
+        $precoCentavos = precoEmCentavos($produtoPreco);
+
+        // O limite de DECIMAL(10,2) é R$ 10000000,00
+        if ($precoCentavos > 1000000099 || $precoCentavos > intdiv(1000000000, $quantidade)) {
+            throw new InvalidArgumentException('Valor do pedido acima do limite permitido');
+        }
+
+        $subtotalCentavos = $precoCentavos * $quantidade;
+
+        if ($totalCentavos > 1000000099 - $subtotalCentavos) {
+            throw new InvalidArgumentException('Valor total acima do limite permitido');
+        }
+
+        $totalCentavos += $subtotalCentavos;
+
+        $produtos[] = [
+            'id' => (int) $produtoId,
+            'name' => $produtoNome,
+            'price' => formatarDinheiro($precoCentavos),
+            'quantity' => $quantidade,
+            'image' => $produtoImagem,
+            'subtotal' => formatarDinheiro($subtotalCentavos)
+        ];
     }
 
-    // 7. Insere a compra no banco de dados e salva o JSON na coluna "itens"
-    $sqlCompra = "INSERT INTO tbl_compras(nome, email, telefone, endereco, itens, total) VALUES(?, ?, ?, ?, ?, ?)";
+    mysqli_stmt_close($stmtProduto);
+
+    // 7. Atualiza o estoque dentro da mesma transação
+    $sqlEstoque = 'UPDATE tbl_produto SET pro_estoque = pro_estoque - ? WHERE pro_id = ? AND pro_estoque >= ?';
+
+    $stmtEstoque = mysqli_prepare($conexao, $sqlEstoque);
+
+    foreach ($produtos as $produto) {
+        $id = $produto['id'];
+        $quantidade = $produto['quantity'];
+
+        mysqli_stmt_bind_param($stmtEstoque, 'iii', $quantidade, $id, $quantidade);
+
+        mysqli_stmt_execute($stmtEstoque);
+
+        if (mysqli_stmt_affected_rows($stmtEstoque) !== 1) {
+            throw new RuntimeException('Não foi possível reservar o estoque');
+        }
+    }
+
+    mysqli_stmt_close($stmtEstoque);
+
+    // 8. Gera o JSON canônico usando os dados do banco
+    $itensOficiais = json_encode($produtos, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE | JSON_THROW_ON_ERROR);
+
+    $total = formatarDinheiro($totalCentavos);
+
+    // 9. Insere a compra
+    $sqlCompra = 'INSERT INTO tbl_compras(nome, email, telefone, endereco, itens, total) VALUES(?, ?, ?, ?, ?, ?)';
 
     $stmtCompra = mysqli_prepare($conexao, $sqlCompra);
 
-    if (!$stmtCompra) {
-        throw new Exception('Erro ao preparar a compra: ' . mysqli_error($conexao));
-    }
+    mysqli_stmt_bind_param($stmtCompra, 'ssssss', $nome, $email, $telefone, $endereco, $itensOficiais, $total);
 
-    // $itens continua sendo o JSON original recebido. Como a coluna do banco é JSON, o MySQL fará a validação
-    mysqli_stmt_bind_param($stmtCompra, "sssssd", $nome, $email, $telefone, $endereco, $itens, $total);
+    mysqli_stmt_execute($stmtCompra);
 
-    if (!mysqli_stmt_execute($stmtCompra)) {
-        throw new Exception('Erro ao salvar a compra: ' . mysqli_stmt_error($stmtCompra));
-    }
-
-    // ID da compra criada
     $compraId = mysqli_insert_id($conexao);
 
     mysqli_stmt_close($stmtCompra);
 
-    // 8. Prepara o INSERT dos itens
-    $sqlItem = "INSERT INTO tbl_itens_compra(compra_id, produto, preco, quantidade, subtotal) VALUES(?, ?, ?, ?, ?)";
+    // 10. Insere os itens da compra.
+    $sqlItem = 'INSERT INTO tbl_itens_compra(compra_id, produto, preco, quantidade, subtotal) VALUES(?, ?, ?, ?, ?)';
 
     $stmtItem = mysqli_prepare($conexao, $sqlItem);
 
-    if (!$stmtItem) {
-        throw new Exception('Erro ao preparar os itens: ' . mysqli_error($conexao));
-    }
+    foreach ($produtos as $produto) {
+        $nomeProduto = $produto['name'];
+        $preco = $produto['price'];
+        $quantidade = $produto['quantity'];
+        $subtotal = $produto['subtotal'];
 
-    // 9. Insere cada produto
-    foreach ($cartArray as $item) {
-        $produto = trim($item['name'] ?? '');
-        $preco = floatval($item['price'] ?? 0);
-        $quantidade = intval($item['quantity'] ?? 0);
+        mysqli_stmt_bind_param($stmtItem, 'issis', $compraId, $nomeProduto, $preco, $quantidade, $subtotal);
 
-        if ($produto === '') {
-            throw new Exception('Produto inválido');
-        }
-
-        if ($preco < 0) {
-            throw new Exception('Preço inválido');
-        }
-
-        if ($quantidade <= 0) {
-            throw new Exception('Quantidade inválida');
-        }
-
-        $subtotal = $preco * $quantidade;
-
-        mysqli_stmt_bind_param($stmtItem, "isdid", $compraId, $produto, $preco, $quantidade, $subtotal);
-
-        if (!mysqli_stmt_execute($stmtItem)) {
-            throw new Exception('Erro ao salvar o item: ' . mysqli_stmt_error($stmtItem));
-        }
+        mysqli_stmt_execute($stmtItem);
     }
 
     mysqli_stmt_close($stmtItem);
 
-    // 10. Confirma a transação
+    // 11. Confirma a compra e a baixa do estoque
     mysqli_commit($conexao);
+    $transacaoIniciada = false;
 
-    // 11. Retorna sucesso
-    echo json_encode(['sucesso' => true, 'mensagem' => 'Pedido enviado com sucesso!']);
+    // 12. Responde ao JavaScript
+    responder(200, ['sucesso' => true, 'mensagem' => 'Pedido enviado com sucesso!', 'compra_id' => $compraId]);
 
-} catch (Exception $e) {
-    // Se alguma coisa der errado, desfaz tudo
-    mysqli_rollback($conexao);
+} catch (JsonException $e) {
+    responder(400, ['sucesso' => false, 'mensagem' => 'O carrinho contém JSON inválido']);
 
-    http_response_code(400);
+} catch (InvalidArgumentException $e) {
+    if ($transacaoIniciada) {
+        mysqli_rollback($conexao);
+    }
 
-    echo json_encode(['sucesso' => false, 'mensagem' => $e->getMessage()]);
+    responder(400, ['sucesso' => false, 'mensagem' => $e->getMessage()]);
+} catch (Throwable $e) {
+    if ($transacaoIniciada) {
+        try {
+            mysqli_rollback($conexao);
+        } catch (Throwable $rollbackError) {
+            error_log('Falha no rollback da compra');
+        }
+    }
+
+    error_log(
+        'Erro ao processar compra: ' . $e->getMessage()
+    );
+
+    responder(500, ['sucesso' => false, 'mensagem' => 'Não foi possível processar o pedido. Tente novamente'
+    ]);
 }
-
 ?>

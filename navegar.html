@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="estilo.css">
   <title>Navegar Produtos</title>
 </head>
 <body>
@@ -44,206 +44,75 @@
 
   <div id="overlay" class="overlay" onclick="toggleCart()"></div>
 
+  <script src="carrinho.js"></script>
+
   <script>
-    let cart = JSON.parse(localStorage.getItem("cart")) || [];
-    
-    function openCart() {
-      document.getElementById("cart").classList.add("toggle");
-      document.getElementById("overlay").classList.add("active");
-  }
-
-    function toggleCart() {
-      const cartEl = document.getElementById("cart");
-      const overlay = document.getElementById("overlay");
-
-      cartEl.classList.toggle("toggle");
-      overlay.classList.toggle("active");
-    }
-
-    function saveCart() {
-      localStorage.setItem("cart", JSON.stringify(cart));
-    }
-
-    function formatPrice(price) {
-      return price.toFixed(2).replace(".", ",");
-    }
-
-    function addToCart(name, price, image) {
-      const existing = cart.find(item => item.name === name);
-
-      if (existing) {
-        existing.quantity++;
-      } else {
-        cart.push({ name, price, image, quantity: 1 });
-      }
-
-      saveCart();
-      renderCart();
-      openCart(); // Abre o carrinho automaticamente quando adicionar um item a ele
-    }
-
-    function increaseQty(index) {
-      cart[index].quantity++;
-      saveCart();
-      renderCart();
-    }
-
-    function decreaseQty(index) {
-      if (cart[index].quantity > 1) {
-        cart[index].quantity--;
-      } else {
-        cart.splice(index, 1);
-      }
-      saveCart();
-      renderCart();
-    }
-
-    function removeItem(index) {
-      cart.splice(index, 1);
-      saveCart();
-      renderCart();
-    }
-
-    function clearCart() {
-      cart = [];
-      saveCart();
-      renderCart();
-    }
-
-    function renderCart() {
-        const cartItems = document.getElementById("cart-items");
-        const totalEl = document.getElementById("total");
-
-        cartItems.innerHTML = "";
-        let total = 0;
-
-        cart.forEach((item, index) => {
-          const subtotal = item.price * item.quantity;
-          total += subtotal;
-
-          const li = document.createElement("li");
-          li.innerHTML = `
-            <img src="${item.image}" class="item-img">
-        
-            <div class="item-info">
-              <span class="item-name">${item.name}</span>
-              <span class="item-price">R$ ${formatPrice(item.price)}</span>
-            </div>
-
-            <div class="item-controls">
-              <button onclick="decreaseQty(${index})">−</button>
-              <span>${item.quantity}</span>
-              <button onclick="increaseQty(${index})">+</button>
-            </div>
-
-            <div class="item-subtotal">
-              R$ ${formatPrice(subtotal)}
-            </div>
-
-            <button class="remove-btn" onclick="removeItem(${index})">✕</button>
-          `;
-          cartItems.appendChild(li);
-        });
-      
-      // Mostrar ou esconder botão "Finalizar compra"
-      const checkoutBtn = document.getElementById("checkout-btn");
-      if (cart.length > 0) {
-        checkoutBtn.style.display = "block";
-      } else {
-        checkoutBtn.style.display = "none";
-      }
-
-      totalEl.innerText = "Total: R$" + formatPrice(total);
-    }
-
-    function goToCheckout() {
-      if (cart.length === 0) {
-        alert("Seu carrinho está vazio");
-        return;
-      }
-
-      // Redirecionar para a página de checkout
-      window.location.href = "compra.html";
-    }
-
-    // Carregar ao abrir página
-    renderCart();
-
-    // Pesquisa que não diferencia maiúsculas de minúsculas
-    const campoPesquisa = document.getElementById("campo-pesquisa");
-    const listaProdutos = document.querySelector(".produtos");
-    const resultadoPesquisa = document.getElementById("resultado-pesquisa");
-
-    let tempoPesquisa;
-
-    campoPesquisa.addEventListener("input", function () {
-        clearTimeout(tempoPesquisa);
-
-        const pesquisa = this.value.trim();
-
-        tempoPesquisa = setTimeout(() => {
-          buscarProdutos(pesquisa);
-        }, 500);
-    });
+    let controladorPesquisa;
 
     async function buscarProdutos(pesquisa = "") {
-      try {
-        const resposta = await fetch("buscar_produtos.php?pesquisa=" + encodeURIComponent(pesquisa));
+        controladorPesquisa?.abort();
 
-        if (!resposta.ok) {
-          throw new Error("Erro na comunicação com o servidor");
+        controladorPesquisa = new AbortController();
+
+        try {
+            const resposta = await fetch(`buscar_produtos.php?pesquisa=${encodeURIComponent(pesquisa)}`, { signal: controladorPesquisa.signal });
+
+            if (!resposta.ok) {
+                throw new Error("Erro ao buscar produtos");
+            }
+
+            const produtos = await resposta.json();
+
+            listaProdutos.innerHTML = "";
+
+            if (produtos.length === 0) {
+              resultadoPesquisa.textContent = "Nenhum produto encontrado";
+
+              return;
+            }
+
+            resultadoPesquisa.textContent = `${produtos.length} produto(s) encontrado(s)`;
+
+            produtos.forEach(produto => {
+              const card = document.createElement("div");
+
+              card.className = "produto";
+
+              card.innerHTML = `
+                <img
+                  src="${produto.pro_imagem}"
+                  alt="${produto.pro_nome}"
+                >
+
+                <h3>${produto.pro_nome}</h3>
+
+                <p>
+                  ${Number(produto.pro_preco).toLocaleString("pt-BR", {
+                    style: "currency",
+                    currency: "BRL"
+                  })}
+                </p>
+
+                <button class="btn">
+                  Comprar
+                </button>
+              `;
+
+              const botao = card.querySelector(".btn");
+
+              botao.addEventListener("click", () => {
+                addToCart(produto.pro_nome, Number(produto.pro_preco), produto.pro_imagem);
+              });
+
+              listaProdutos.appendChild(card);
+            });
+
+        } catch (erro) {
+            if (erro.name === "AbortError") return;
+
+            console.error(erro);
+            resultadoPesquisa.textContent = "Não foi possível carregar os produtos";
         }
-
-        const produtos = await resposta.json();
-
-        listaProdutos.innerHTML = "";
-
-        if (produtos.length === 0) {
-          resultadoPesquisa.textContent = "Nenhum produto encontrado";
-
-          return;
-        }
-
-        resultadoPesquisa.textContent = `${produtos.length} produto(s) encontrado(s)`;
-
-        produtos.forEach(produto => {
-          const card = document.createElement("div");
-
-          card.className = "produto";
-
-          card.innerHTML = `
-            <img
-              src="${produto.pro_imagem}"
-              alt="${produto.pro_nome}"
-            >
-
-            <h3>${produto.pro_nome}</h3>
-
-            <p>
-              ${Number(produto.pro_preco).toLocaleString("pt-BR", {
-                style: "currency",
-                currency: "BRL"
-              })}
-            </p>
-
-            <button class="btn">
-              Comprar
-            </button>
-          `;
-
-          const botao = card.querySelector(".btn");
-
-          botao.addEventListener("click", () => {
-            addToCart(produto.pro_nome, Number(produto.pro_preco), produto.pro_imagem);
-          });
-
-          listaProdutos.appendChild(card);
-        });
-      } catch (erro) {
-        console.error(erro);
-        
-        resultadoPesquisa.textContent = "Não foi possível carregar os produtos";
-      }
     }
 
     buscarProdutos();

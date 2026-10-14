@@ -18,8 +18,8 @@ mysqli_query($conexao, "DROP TABLE IF EXISTS $tbNome1");
 $sqlCompras = "CREATE TABLE $tbNome1 (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(200) NOT NULL,
-    email VARCHAR(150) NOT NULL UNIQUE,
-    telefone VARCHAR(30) NOT NULL UNIQUE,
+    email VARCHAR(150) NOT NULL,
+    telefone VARCHAR(30) NOT NULL,
     endereco VARCHAR(500) NOT NULL,
     itens JSON NOT NULL,
     total DECIMAL(10,2) NOT NULL,

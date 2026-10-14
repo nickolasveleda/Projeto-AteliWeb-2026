@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="estilo.css">
   <title>AteliWeb - E-Commerce Cerâmica Artesanal</title>
 </head>
 <body>
@@ -66,126 +66,7 @@
 
   <div id="overlay" class="overlay" onclick="toggleCart()"></div>
 
-  <script>
-	  let cart = JSON.parse(localStorage.getItem("cart")) || [];
-
-	  function toggleCart() {
-		  const cartEl = document.getElementById("cart");
-		  const overlay = document.getElementById("overlay");
-
-		  cartEl.classList.toggle("toggle");
-		  overlay.classList.toggle("active");
-	  }
-
-	  function saveCart() {
-		  localStorage.setItem("cart", JSON.stringify(cart));
-	  }
-
-	  function formatPrice(price) {
-		  return price.toFixed(2).replace(".", ",");
-	  }
-
-	  function addToCart(name, price, image) {
-		  const existing = cart.find(item => item.name === name);
-
-		  if (existing) {
-			 existing.quantity++;
-		  } else {
-			 cart.push({ name, price, image, quantity: 1 });
-		  }
-
-		  saveCart();
-		  renderCart();
-		  toggleCart(); // Abre o carrinho automaticamente quando adicionar um item a ele
-	  }
-
-	  function increaseQty(index) {
-		  cart[index].quantity++;
-		  saveCart();
-		  renderCart();
-	  }
-
-	  function decreaseQty(index) {
-		  if (cart[index].quantity > 1) {
-			 cart[index].quantity--;
-		  } else {
-			 cart.splice(index, 1);
-		  }
-		  saveCart();
-		  renderCart();
-	  }
-
-	  function removeItem(index) {
-		  cart.splice(index, 1);
-		  saveCart();
-		  renderCart();
-	  }
-
-	  function clearCart() {
-		  cart = [];
-		  saveCart();
-		  renderCart();
-	  }
-
-	  function renderCart() {
-		    const cartItems = document.getElementById("cart-items");
-		    const totalEl = document.getElementById("total");
-
-		    cartItems.innerHTML = "";
-		    let total = 0;
-
-		    cart.forEach((item, index) => {
-			   const subtotal = item.price * item.quantity;
-			   total += subtotal;
-
-			   const li = document.createElement("li");
-			   li.innerHTML = `
-				    <img src="${item.image}" class="item-img">
-			
-				    <div class="item-info">
-					   <span class="item-name">${item.name}</span>
-					   <span class="item-price">R$ ${formatPrice(item.price)}</span>
-				    </div>
-
-				    <div class="item-controls">
-					   <button onclick="decreaseQty(${index})">−</button>
-					   <span>${item.quantity}</span>
-					   <button onclick="increaseQty(${index})">+</button>
-				    </div>
-
-				    <div class="item-subtotal">
-					   R$ ${formatPrice(subtotal)}
-				    </div>
-
-				    <button class="remove-btn" onclick="removeItem(${index})">✕</button>
-			    `;
-			    cartItems.appendChild(li);
-		    });
-		
-		  // Mostrar ou esconder botão "Finalizar compra"
-		  const checkoutBtn = document.getElementById("checkout-btn");
-		  if (cart.length > 0) {
-			 checkoutBtn.style.display = "block";
-		  } else {
-			 checkoutBtn.style.display = "none";
-		  }
-
-		  totalEl.innerText = "Total: R$" + formatPrice(total);
-	  }
-	
-	  function goToCheckout() {
-		  if (cart.length === 0) {
-			 alert("Seu carrinho está vazio");
-			 return;
-		  }
-
-		  // Redirecionar para a página de checkout
-		  window.location.href = "compra.html";
-	  }
-
-	  // Carregar ao abrir página
-	  renderCart();
-  </script>
+  <script src="carrinho.js"></script>
 
   <div class="copyright">
     © 2026 AteliWeb - Todos os direitos reservados

@@ -4,7 +4,7 @@
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0">
 	<title>Finalizar Compra</title>
-	<link rel="stylesheet" href="style.css">
+	<link rel="stylesheet" href="estilo.css">
 </head>
 <body>
 	<div class="checkout-container">
@@ -74,7 +74,7 @@
 	        e.preventDefault();
 
 	        if(cart.length === 0){
-	            alert("Seu carrinho está vazio.");
+	            alert("Seu carrinho está vazio");
 	            return;
 	        }
 
@@ -87,10 +87,15 @@
 
 	        const dados = new FormData();
 
-	        dados.append("name", this.name.value);
-	        dados.append("email", this.email.value);
-	        dados.append("phone", this.phone.value);
-	        dados.append("address", this.address.value);
+	        const formulario = e.currentTarget;
+
+			dados.append("name", formulario.elements.namedItem("name").value);
+
+			dados.append("email", formulario.elements.namedItem("email").value);
+
+			dados.append("phone", formulario.elements.namedItem("phone").value);
+
+			dados.append("address", formulario.elements.namedItem("address").value);
 
 	        // Envia o carrinho inteiro em JSON
 	        dados.append("cart", JSON.stringify(cart));
@@ -119,7 +124,7 @@
 
 	            }
 	        } catch(erro) {
-	            console.error("Erro:", erro);
+	            console.error("Erro: ", erro);
 
 	            alert("Verifique sua conexão e tente novamente" + "\nNão foi possível enviar o pedido");
 	        }
