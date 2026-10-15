@@ -253,10 +253,7 @@
       const decreaseButton = document.createElement("button");
       decreaseButton.type = "button";
       decreaseButton.textContent = "−";
-      decreaseButton.setAttribute(
-        "aria-label",
-        `Diminuir quantidade de ${item.name}`
-      );
+      decreaseButton.setAttribute("aria-label", `Diminuir quantidade de ${item.name}`);
       decreaseButton.addEventListener("click", () => {
         decreaseQty(index);
       });
@@ -267,10 +264,7 @@
       const increaseButton = document.createElement("button");
       increaseButton.type = "button";
       increaseButton.textContent = "+";
-      increaseButton.setAttribute(
-        "aria-label",
-        `Aumentar quantidade de ${item.name}`
-      );
+      increaseButton.setAttribute("aria-label", `Aumentar quantidade de ${item.name}`);
       increaseButton.addEventListener("click", () => {
         increaseQty(index);
       });
@@ -316,9 +310,7 @@
     const cartCount = getElement("cart-count");
 
     if (cartCount) {
-      cartCount.textContent = String(
-        cart.reduce((sum, item) => sum + item.quantity, 0)
-      );
+      cartCount.textContent = String(cart.reduce((sum, item) => sum + item.quantity, 0));
     }
   }
 
@@ -356,7 +348,9 @@
 
   // Renderiza o carrinho ao carregar a página
   if (document.readyState === "loading") {
-    document.addEventListener("DOMContentLoaded", renderCart, { once: true });
+    document.addEventListener("DOMContentLoaded", renderCart, {
+      once: true
+    });
   } else {
     renderCart();
   }

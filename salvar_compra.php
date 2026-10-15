@@ -6,7 +6,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-require_once __DIR__ . '/conecta.php';
+require_once(__DIR__ . "conecta.php");
 
 $transacaoIniciada = false;
 
@@ -14,10 +14,7 @@ $transacaoIniciada = false;
 function responder(int $status, array $dados): never {
     http_response_code($status);
 
-    echo json_encode(
-        $dados,
-        JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE
-    );
+    echo json_encode($dados, JSON_UNESCAPED_UNICODE | JSON_INVALID_UTF8_SUBSTITUTE);
 
     exit;
 }
@@ -28,18 +25,11 @@ function inteiroPositivo(mixed $valor): ?int {
         return $valor > 0 ? $valor : null;
     }
 
-    if (
-        !is_string($valor) ||
-        !preg_match('/^[1-9][0-9]*$/', $valor)
-    ) {
+    if (!is_string($valor) || !preg_match('/^[1-9][0-9]*$/', $valor)) {
         return null;
     }
 
-    $numero = filter_var(
-        $valor,
-        FILTER_VALIDATE_INT,
-        ['options' => ['min_range' => 1]]
-    );
+    $numero = filter_var($valor, FILTER_VALIDATE_INT, ['options' => ['min_range' => 1]]);
 
     return $numero === false ? null : $numero;
 }
@@ -58,10 +48,7 @@ function precoEmCentavos(mixed $valor): int {
 
     $inteiro = (int) $partes[1];
 
-    if (
-        (string) $inteiro !== ltrim($partes[1], '0') &&
-        !preg_match('/^0+$/', $partes[1])
-    ) {
+    if ((string) $inteiro !== ltrim($partes[1], '0') && !preg_match('/^0+$/', $partes[1])) {
         throw new RuntimeException('Preço fora do limite permitido');
     }
 
@@ -158,7 +145,7 @@ try {
     $totalCentavos = 0;
 
     // 6. Busca cada produto no banco e bloqueia sua linha
-    $sqlProduto = 'SELECT pro_id, pro_nome, pro_preco, pro_estoque, pro_imagem FROM tbl_produto WHERE pro_id = ? FOR UPDATE';
+    $sqlProduto = "SELECT pro_id, pro_nome, pro_preco, pro_estoque, pro_imagem FROM tbl_produto WHERE pro_id = ? FOR UPDATE";
 
     $stmtProduto = mysqli_prepare($conexao, $sqlProduto);
 
@@ -173,26 +160,26 @@ try {
         mysqli_stmt_free_result($stmtProduto);
 
         if (!$encontrado) {
-            throw new InvalidArgumentException('Um dos produtos não existe mais');
+            throw new InvalidArgumentException("Um dos produtos não existe mais");
         }
 
         $estoqueDisponivel = (int) $estoqueDisponivel;
 
         if ($estoqueDisponivel < $quantidade) {
-            throw new InvalidArgumentException('Estoque insuficiente para o produto ' . $produtoNome);
+            throw new InvalidArgumentException("Estoque insuficiente para " . $produtoNome);
         }
 
         $precoCentavos = precoEmCentavos($produtoPreco);
 
         // O limite de DECIMAL(10,2) é R$ 10000000,00
         if ($precoCentavos > 1000000099 || $precoCentavos > intdiv(1000000000, $quantidade)) {
-            throw new InvalidArgumentException('Valor do pedido acima do limite permitido');
+            throw new InvalidArgumentException("Valor do pedido acima do limite permitido");
         }
 
         $subtotalCentavos = $precoCentavos * $quantidade;
 
         if ($totalCentavos > 1000000099 - $subtotalCentavos) {
-            throw new InvalidArgumentException('Valor total acima do limite permitido');
+            throw new InvalidArgumentException("Valor total acima do limite permitido");
         }
 
         $totalCentavos += $subtotalCentavos;
@@ -210,7 +197,7 @@ try {
     mysqli_stmt_close($stmtProduto);
 
     // 7. Atualiza o estoque dentro da mesma transação
-    $sqlEstoque = 'UPDATE tbl_produto SET pro_estoque = pro_estoque - ? WHERE pro_id = ? AND pro_estoque >= ?';
+    $sqlEstoque = "UPDATE tbl_produto SET pro_estoque = pro_estoque - ? WHERE pro_id = ? AND pro_estoque >= ?";
 
     $stmtEstoque = mysqli_prepare($conexao, $sqlEstoque);
 
@@ -223,7 +210,7 @@ try {
         mysqli_stmt_execute($stmtEstoque);
 
         if (mysqli_stmt_affected_rows($stmtEstoque) !== 1) {
-            throw new RuntimeException('Não foi possível reservar o estoque');
+            throw new RuntimeException("Não foi possível reservar o estoque");
         }
     }
 
@@ -270,10 +257,10 @@ try {
     $transacaoIniciada = false;
 
     // 12. Responde ao JavaScript
-    responder(200, ['sucesso' => true, 'mensagem' => 'Pedido enviado com sucesso!', 'compra_id' => $compraId]);
+    responder(200, ['sucesso' => true, 'mensagem' => "Pedido enviado com sucesso!", 'compra_id' => $compraId]);
 
 } catch (JsonException $e) {
-    responder(400, ['sucesso' => false, 'mensagem' => 'O carrinho contém JSON inválido']);
+    responder(400, ['sucesso' => false, 'mensagem' => "O carrinho contém JSON inválido"]);
 
 } catch (InvalidArgumentException $e) {
     if ($transacaoIniciada) {
@@ -286,15 +273,16 @@ try {
         try {
             mysqli_rollback($conexao);
         } catch (Throwable $rollbackError) {
-            error_log('Falha no rollback da compra');
+            error_log("Falha no rollback da compra");
         }
     }
 
     error_log(
-        'Erro ao processar compra: ' . $e->getMessage()
+        "Erro ao processar compra: " . $e->getMessage()
     );
 
-    responder(500, ['sucesso' => false, 'mensagem' => 'Não foi possível processar o pedido. Tente novamente'
+    responder(500, ['sucesso' => false, 'mensagem' => "Não foi possível processar o pedido. Tente novamente"
     ]);
 }
+
 ?>

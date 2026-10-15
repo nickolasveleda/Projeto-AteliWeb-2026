@@ -18,12 +18,12 @@ if (!$stmt) {
     exit;
 }
 
-$termo = "%" . $pesquisa . "%";
+$termo = '%' . $pesquisa . '%';
 
-if (!mysqli_stmt_bind_param($stmt, "s", $termo)) {
+if (!mysqli_stmt_bind_param($stmt, 's', $termo)) {
     http_response_code(500);
 
-    echo json_encode(['erro' => 'Erro ao associar o parâmetro: ' . mysqli_stmt_error($stmt)], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['erro' => "Erro ao associar o parâmetro: " . mysqli_stmt_error($stmt)], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
@@ -31,7 +31,7 @@ if (!mysqli_stmt_bind_param($stmt, "s", $termo)) {
 if (!mysqli_stmt_execute($stmt)) {
     http_response_code(500);
 
-    echo json_encode(['erro' => 'Erro ao executar a consulta: ' . mysqli_stmt_error($stmt)], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['erro' => "Erro ao executar a consulta: " . mysqli_stmt_error($stmt)], JSON_UNESCAPED_UNICODE);
 
     exit;
 }
@@ -49,4 +49,5 @@ echo json_encode($produtos, JSON_UNESCAPED_UNICODE);
 
 mysqli_stmt_close($stmt);
 mysqli_close($conexao);
+
 ?>

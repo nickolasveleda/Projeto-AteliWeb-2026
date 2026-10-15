@@ -8,7 +8,7 @@ $abre = mysqli_query($conexao, "USE $dbnome");
 $tbNome1 = "tbl_compras";
 $tbNome2 = "tbl_itens_compra";
 
-// Primeiro apaga-se a tabela filha. Ela possui uma Foreign Key apontando para tbl_compras
+// Primeiro apaga-se a tabela filha. Ela possui uma FOREIGN KEY apontando para tbl_compras
 mysqli_query($conexao, "DROP TABLE IF EXISTS $tbNome2");
 
 // Apenas depois pode apagar a tabela pai
@@ -16,7 +16,7 @@ mysqli_query($conexao, "DROP TABLE IF EXISTS $tbNome1");
 
 // Cria tbl_compras
 $sqlCompras = "CREATE TABLE $tbNome1 (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(10) AUTO_INCREMENT PRIMARY KEY,
     nome VARCHAR(200) NOT NULL,
     email VARCHAR(150) NOT NULL,
     telefone VARCHAR(30) NOT NULL,
@@ -35,7 +35,7 @@ if (mysqli_query($conexao, $sqlCompras)) {
 
 // Cria tbl_itens_compra
 $sqlItens = "CREATE TABLE $tbNome2 (
-    id INT AUTO_INCREMENT PRIMARY KEY,
+    id INT(10) AUTO_INCREMENT PRIMARY KEY,
     compra_id INT NOT NULL,
     produto VARCHAR(200) NOT NULL,
     preco DECIMAL(10,2) NOT NULL,
