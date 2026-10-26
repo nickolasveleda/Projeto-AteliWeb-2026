@@ -11,13 +11,13 @@ $tbNome1 = "tbl_produto";
 $elimina = "DROP TABLE IF EXISTS tbl_produto";
 
 $criacao1 = "CREATE TABLE IF NOT EXISTS $tbNome1 (
-    .pro_id INT(10) AUTO_INCREMENT PRIMARY KEY,
-    .pro_nome VARCHAR(200) NOT NULL,
-    .pro_descricao TEXT NOT NULL,
-    .pro_preco DECIMAL(10,2) NOT NULL,
-    .pro_categoria VARCHAR(100) NOT NULL,
-    .pro_imagem VARCHAR(300) NOT NULL,
-    .pro_estoque INT(5) NOT NULL DEFAULT 0
+    pro_id INT(10) AUTO_INCREMENT PRIMARY KEY,
+    pro_nome VARCHAR(200) NOT NULL,
+    pro_descricao TEXT NOT NULL,
+    pro_preco DECIMAL(10,2) NOT NULL,
+    pro_categoria VARCHAR(100) NOT NULL,
+    pro_imagem VARCHAR(300) NOT NULL,
+    pro_estoque INT(5) NOT NULL DEFAULT 0
 )";
 
 // Exclui a tabela

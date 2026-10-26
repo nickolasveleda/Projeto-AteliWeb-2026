@@ -16,14 +16,14 @@ mysqli_query($conexao, "DROP TABLE IF EXISTS $tbNome1");
 
 // Cria tbl_compras
 $sqlCompras = "CREATE TABLE $tbNome1 (
-    id INT(10) AUTO_INCREMENT PRIMARY KEY,
-    nome VARCHAR(200) NOT NULL,
-    email VARCHAR(150) NOT NULL,
-    telefone VARCHAR(30) NOT NULL,
-    endereco VARCHAR(500) NOT NULL,
-    itens JSON NOT NULL,
-    total DECIMAL(10,2) NOT NULL,
-    data_compra DATETIME DEFAULT CURRENT_TIMESTAMP
+    compra_id INT(10) AUTO_INCREMENT PRIMARY KEY,
+    compra_nome VARCHAR(200) NOT NULL,
+    compra_email VARCHAR(150) NOT NULL,
+    compra_telefone VARCHAR(30) NOT NULL,
+    compra_endereco VARCHAR(500) NOT NULL,
+    compra_itens JSON NOT NULL,
+    compra_total DECIMAL(10,2) NOT NULL,
+    compra_data DATETIME DEFAULT CURRENT_TIMESTAMP
 )";
 
 if (mysqli_query($conexao, $sqlCompras)) {
@@ -35,13 +35,13 @@ if (mysqli_query($conexao, $sqlCompras)) {
 
 // Cria tbl_itens_compra
 $sqlItens = "CREATE TABLE $tbNome2 (
-    id INT(10) AUTO_INCREMENT PRIMARY KEY,
-    compra_id INT NOT NULL,
-    produto VARCHAR(200) NOT NULL,
-    preco DECIMAL(10,2) NOT NULL,
-    quantidade INT NOT NULL,
-    subtotal DECIMAL(10,2) NOT NULL,
-    CONSTRAINT fk_itens_compra FOREIGN KEY(compra_id) REFERENCES $tbNome1(id) ON DELETE CASCADE ON UPDATE CASCADE
+    itens_id INT(10) AUTO_INCREMENT PRIMARY KEY,
+    compra_id INT(10) NOT NULL,
+    itens_produto VARCHAR(200) NOT NULL,
+    itens_preco DECIMAL(10,2) NOT NULL,
+    itens_quantidade INT NOT NULL,
+    itens_subtotal DECIMAL(10,2) NOT NULL,
+    CONSTRAINT fk_itens_compra FOREIGN KEY(compra_id) REFERENCES $tbNome1(compra_id) ON DELETE CASCADE ON UPDATE CASCADE
 )";
 
 if (mysqli_query($conexao, $sqlItens)) {
