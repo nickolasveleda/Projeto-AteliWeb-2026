@@ -41,8 +41,8 @@ $sqlItens = "CREATE TABLE $tbNome2 (
     itens_preco DECIMAL(10,2) NOT NULL,
     itens_quantidade INT NOT NULL,
     itens_subtotal DECIMAL(10,2) NOT NULL,
-    CONSTRAINT fk_itens_compra FOREIGN KEY(compra_id) REFERENCES $tbNome1(compra_id) ON DELETE CASCADE ON UPDATE CASCADE
-    CONSTRAINT fk_itens_produto FOREIGN KEY(pro_id) REFERENCES tbl_produto(pro_id) ON DELETE CASCADE ON UPDATE CASCADE
+    CONSTRAINT fk_itens_compra FOREIGN KEY(compra_id) REFERENCES $tbNome1(compra_id) ON DELETE CASCADE ON UPDATE CASCADE,
+    CONSTRAINT fk_itens_produto FOREIGN KEY(pro_id) REFERENCES tbl_produto(pro_id) ON UPDATE CASCADE
 )";
 
 if (mysqli_query($conexao, $sqlItens)) {
