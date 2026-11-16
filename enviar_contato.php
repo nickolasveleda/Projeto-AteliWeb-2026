@@ -1,4 +1,5 @@
 <?php
+
 if ($_SERVER["REQUEST_METHOD"] !== "POST") {
     header("Location: contato.html");
     exit;
@@ -35,6 +36,9 @@ $headers = "From: AteliWeb <projetoateliweb2026@gmail.com>\r\n";
 $headers .= "Reply-To: " . $email . "\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
+//Nome seguro
+$nomeSeguro = htmlspecialchars($nome, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
 // Envia o e-mail
 if (mail($destinatario, $assunto, $corpo, $headers)) {
     echo "
@@ -42,12 +46,13 @@ if (mail($destinatario, $assunto, $corpo, $headers)) {
     <html lang='pt-br'>
     <head>
         <meta charset='utf-8'>
+		<link rel="stylesheet" href="estilo.css">
         <title>Mensagem Enviada</title>
     </head>
 
-    <body style='style.css'>
+    <body>
         <p style = 'margin:20px;'>
-            Obrigado pelo contato, $nome. Retornaremos assim que possível!
+            Obrigado pelo contato, <?= $nomeSeguro ?>. Retornaremos assim que possível!
         </p>
 
         <a
