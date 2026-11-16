@@ -36,7 +36,7 @@ $headers = "From: AteliWeb <projetoateliweb2026@gmail.com>\r\n";
 $headers .= "Reply-To: " . $email . "\r\n";
 $headers .= "Content-Type: text/plain; charset=UTF-8\r\n";
 
-//Nome seguro
+// Evita que caracteres especiais do nome sejam interpretados como HTML
 $nomeSeguro = htmlspecialchars($nome, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
 // Envia o e-mail
@@ -46,29 +46,27 @@ if (mail($destinatario, $assunto, $corpo, $headers)) {
     <html lang='pt-br'>
     <head>
         <meta charset='utf-8'>
-		<link rel="stylesheet" href="estilo.css">
+		<link rel='stylesheet' href='estilo.css'>
         <title>Mensagem Enviada</title>
     </head>
 
     <body>
         <p style = 'margin:20px;'>
-            Obrigado pelo contato, <?= $nomeSeguro ?>. Retornaremos assim que possível!
+            Obrigado pelo contato, " . $nomeSeguro . ". Retornaremos assim que possível!
         </p>
 
-        <a
-            href = 'contato.html'
-            style = 'style.css'
-        >
+        <a href='contato.html' class='botao-voltar'>
             Voltar
         </a>
     </body>
     </html>
-    ";
+	";
 } else {
     echo "
-    <h1>Não foi possível enviar a mensagem</h1>
+    <h1>NÃO FOI POSSÍVEL ENVIAR A MENSAGEM</h1>
     <p>Por favor tente novamente mais tarde</p>
     <a href='contato.html'>Voltar</a>
     ";
 }
+
 ?>
