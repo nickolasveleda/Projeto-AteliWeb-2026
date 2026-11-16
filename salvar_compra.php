@@ -6,7 +6,7 @@ header('Content-Type: application/json; charset=utf-8');
 
 mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
 
-require_once(__DIR__ . "conecta.php");
+require_once __DIR__ . '/conecta.php';
 
 $transacaoIniciada = false;
 
@@ -222,8 +222,7 @@ try {
     $total = formatarDinheiro($totalCentavos);
 
     // 9. Insere a compra
-    $sqlCompra = 'INSERT INTO tbl_compras(nome, email, telefone, endereco, itens, total) VALUES(?, ?, ?, ?, ?, ?)';
-
+    $sqlCompra = 'INSERT INTO tbl_compras(compra_nome, compra_email, compra_telefone, compra_endereco, compra_itens, compra_total) VALUES(?, ?, ?, ?, ?, ?)';
     $stmtCompra = mysqli_prepare($conexao, $sqlCompra);
 
     mysqli_stmt_bind_param($stmtCompra, 'ssssss', $nome, $email, $telefone, $endereco, $itensOficiais, $total);
@@ -234,23 +233,24 @@ try {
 
     mysqli_stmt_close($stmtCompra);
 
-    // 10. Insere os itens da compra.
-    $sqlItem = 'INSERT INTO tbl_itens_compra(compra_id, produto, preco, quantidade, subtotal) VALUES(?, ?, ?, ?, ?)';
+    // 10. Insere os itens da compra
+	$sqlItem = 'INSERT INTO tbl_itens_compra(compra_id, pro_id, itens_produto, itens_preco, itens_quantidade, itens_subtotal) VALUES(?, ?, ?, ?, ?, ?)';
 
-    $stmtItem = mysqli_prepare($conexao, $sqlItem);
+	$stmtItem = mysqli_prepare($conexao, $sqlItem);
 
-    foreach ($produtos as $produto) {
-        $nomeProduto = $produto['name'];
-        $preco = $produto['price'];
-        $quantidade = $produto['quantity'];
-        $subtotal = $produto['subtotal'];
+	foreach ($produtos as $produto) {
+		$idProduto = $produto['id'];
+		$nomeProduto = $produto['name'];
+		$preco = $produto['price'];
+		$quantidade = $produto['quantity'];
+		$subtotal = $produto['subtotal'];
 
-        mysqli_stmt_bind_param($stmtItem, 'issis', $compraId, $nomeProduto, $preco, $quantidade, $subtotal);
+		mysqli_stmt_bind_param($stmtItem, 'iissis', $compraId, $idProduto, $nomeProduto, $preco, $quantidade, $subtotal);
 
-        mysqli_stmt_execute($stmtItem);
-    }
+		mysqli_stmt_execute($stmtItem);
+	}
 
-    mysqli_stmt_close($stmtItem);
+mysqli_stmt_close($stmtItem);
 
     // 11. Confirma a compra e a baixa do estoque
     mysqli_commit($conexao);
@@ -258,7 +258,6 @@ try {
 
     // 12. Responde ao JavaScript
     responder(200, ['sucesso' => true, 'mensagem' => "Pedido enviado com sucesso!", 'compra_id' => $compraId]);
-
 } catch (JsonException $e) {
     responder(400, ['sucesso' => false, 'mensagem' => "O carrinho contém JSON inválido"]);
 
